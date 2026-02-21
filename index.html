@@ -1092,7 +1092,7 @@
             const spotifyTableBody = document.getElementById('spotify-genres-table');
             spotifyTableBody.innerHTML = spotify.genres.map(genre => `
                 <tr>
-                    <td><strong>${genre.Genre}</strong></td>
+                    <td><span class="genre-badge" style="background: #667eea; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; display: inline-block;">${genre.Genre}</span></td>
                     <td><span class="metric-badge">${genre.Artists}</span></td>
                     <td>${formatNumber(genre.Total_Followers)}</td>
                     <td><span class="metric-badge high">${Math.round(genre.Avg_Popularity)}</span></td>
@@ -1155,7 +1155,7 @@
             const discogsTableBody = document.getElementById('discogs-genres-table');
             discogsTableBody.innerHTML = discogs.genres.map(genre => `
                 <tr>
-                    <td><strong>${genre.Genre}</strong></td>
+                    <td><span class="genre-badge" style="background: #764ba2; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; display: inline-block;">${genre.Genre}</span></td>
                     <td><span class="metric-badge">${genre.Artists}</span></td>
                     <td><span class="metric-badge high">${genre.Avg_Rating.toFixed(2)}</span></td>
                     <td>${Math.round(genre.Avg_Rank)}</td>
@@ -1219,7 +1219,7 @@
             const mbTableBody = document.getElementById('mb-countries-table');
             mbTableBody.innerHTML = mb.countries.map(country => `
                 <tr>
-                    <td><strong>${country.Country}</strong></td>
+                    <td><span class="genre-badge" style="background: #4ECDC4; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; display: inline-block;">${country.Country}</span></td>
                     <td><span class="metric-badge">${country.Artists}</span></td>
                     <td><span class="metric-badge high">${country.Avg_Score.toFixed(2)}</span></td>
                 </tr>
