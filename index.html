@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 音樂數據 Dashboard - 2021-2026</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.95em;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-unit {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .metric-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .metric-badge.high {
+            background: #4CAF50;
+        }
+        
+        .metric-badge.medium {
+            background: #FFC107;
+            color: #333;
+        }
+        
+        .metric-badge.low {
+            background: #FF6B6B;
+        }
+        
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            font-size: 0.95em;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 音樂數據分析 Dashboard</h1>
+            <p>Spotify × Discogs × MusicBrainz | 2021-2026 年度綜合分析</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('spotify')">🎧 Spotify</button>
+            <button class="tab-button" onclick="showTab('discogs')">🎚️ Discogs</button>
+            <button class="tab-button" onclick="showTab('musicbrainz')">🏷️ MusicBrainz</button>
+        </div>
+        
+        <!-- ============ SPOTIFY TAB ============ -->
+        <div id="spotify" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">📊 總藝術家數</div>
+                    <div class="stat-value" id="spotify-artists">--</div>
+                    <div class="stat-unit">位</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">👥 總粉絲數</div>
+                    <div class="stat-value" id="spotify-followers">--</div>
+                    <div class="stat-unit">百萬</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⭐ 平均熱度</div>
+                    <div class="stat-value" id="spotify-popularity">--</div>
+                    <div class="stat-unit">/100</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">💃 舞蹈性</div>
+                    <div class="stat-value" id="spotify-danceability">--</div>
+                    <div class="stat-unit">/100</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⚡ 能量指數</div>
+                    <div class="stat-value" id="spotify-energy">--</div>
+                    <div class="stat-unit">/100</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">🎸 流派分佈</div>
+                    <div id="spotify-genres-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">📈 年份趨勢</div>
+                    <div id="spotify-yearly-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container full-width">
+                    <div class="chart-title">👑 Top 20 藝術家（按粉絲數）</div>
+                    <div id="spotify-top-artists-chart" style="height: 500px;"></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="chart-title">📋 詳細流派數據</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>流派</th>
+                            <th>藝術家數</th>
+                            <th>總粉絲數</th>
+                            <th>平均熱度</th>
+                        </tr>
+                    </thead>
+                    <tbody id="spotify-genres-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ============ DISCOGS TAB ============ -->
+        <div id="discogs" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">📊 涵蓋藝術家</div>
+                    <div class="stat-value" id="discogs-artists">--</div>
+                    <div class="stat-unit">位</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⭐ 平均評分</div>
+                    <div class="stat-value" id="discogs-rating">--</div>
+                    <div class="stat-unit">/5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">📍 平均排名</div>
+                    <div class="stat-value" id="discogs-rank">--</div>
+                    <div class="stat-unit">位</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">🎸 流派分佈</div>
+                    <div id="discogs-genres-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">⭐ 評分分佈</div>
+                    <div id="discogs-rating-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container full-width">
+                    <div class="chart-title">🏆 Top 20 藝術家（按評分）</div>
+                    <div id="discogs-top-artists-chart" style="height: 500px;"></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="chart-title">📋 詳細流派評分</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>流派</th>
+                            <th>藝術家數</th>
+                            <th>平均評分</th>
+                            <th>平均排名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discogs-genres-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ============ MUSICBRAINZ TAB ============ -->
+        <div id="musicbrainz" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">📊 涵蓋藝術家</div>
+                    <div class="stat-value" id="mb-artists">--</div>
+                    <div class="stat-unit">位</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⭐ 平均得分</div>
+                    <div class="stat-value" id="mb-score">--</div>
+                    <div class="stat-unit">/1.0</div>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">🏷️ 前 15 個標籤</div>
+                    <div id="mb-tags-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">🌍 國家分佈</div>
+                    <div id="mb-countries-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-container full-width">
+                    <div class="chart-title">🏆 Top 20 藝術家（按得分）</div>
+                    <div id="mb-top-artists-chart" style="height: 500px;"></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="chart-title">📋 國家詳細數據</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>國家</th>
+                            <th>藝術家數</th>
+                            <th>平均得分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mb-countries-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <footer>
+            <p>📊 Dashboard generated at <span id="timestamp"></span></p>
+            <p>Data covers 2021-2026 | Spotify, Discogs & MusicBrainz data</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 直接嵌入資料
+        const dashboardData = {
+  "timestamp": "2026-02-21T11:54:18.026969",
+  "data_range": "2021-2026",
+  "spotify": {
+    "stats": {
+      "total_artists": 28,
+      "total_followers": 1296679538,
+      "avg_popularity": 86.10714285714286,
+      "avg_danceability": 0.6731832110046108,
+      "avg_energy": 0.7323343328624186
+    },
+    "genres": [
+      {
+        "Genre": "Pop",
+        "Artists": 7,
+        "Total_Followers": 338243607,
+        "Avg_Popularity": 91.0
+      },
+      {
+        "Genre": "Hip-Hop",
+        "Artists": 4,
+        "Total_Followers": 147347837,
+        "Avg_Popularity": 78.0
+      },
+      {
+        "Genre": "Hip-Hop/Pop",
+        "Artists": 3,
+        "Total_Followers": 146472585,
+        "Avg_Popularity": 90.66666666666667
+      },
+      {
+        "Genre": "Indie Rock",
+        "Artists": 3,
+        "Total_Followers": 151755167,
+        "Avg_Popularity": 88.66666666666667
+      },
+      {
+        "Genre": "Pop/Rock",
+        "Artists": 2,
+        "Total_Followers": 99881239,
+        "Avg_Popularity": 86.5
+      },
+      {
+        "Genre": "R&B/Pop",
+        "Artists": 2,
+        "Total_Followers": 125846579,
+        "Avg_Popularity": 73.0
+      },
+      {
+        "Genre": "Rock",
+        "Artists": 2,
+        "Total_Followers": 87196549,
+        "Avg_Popularity": 86.5
+      },
+      {
+        "Genre": "Country",
+        "Artists": 1,
+        "Total_Followers": 73020641,
+        "Avg_Popularity": 89.0
+      },
+      {
+        "Genre": "Latin Pop",
+        "Artists": 1,
+        "Total_Followers": 25421040,
+        "Avg_Popularity": 71.0
+      },
+      {
+        "Genre": "Pop/Alt",
+        "Artists": 1,
+        "Total_Followers": 13385357,
+        "Avg_Popularity": 97.0
+      },
+      {
+        "Genre": "R&B",
+        "Artists": 1,
+        "Total_Followers": 17887739,
+        "Avg_Popularity": 78.0
+      },
+      {
+        "Genre": "Reggaeton/Latin",
+        "Artists": 1,
+        "Total_Followers": 70221198,
+        "Avg_Popularity": 97.0
+      }
+    ],
+    "yearly_trend": [
+      {
+        "Year": 2022,
+        "Artists": 2,
+        "Avg_Popularity": 81.5,
+        "Total_Followers": 76817250
+      },
+      {
+        "Year": 2023,
+        "Artists": 7,
+        "Avg_Popularity": 86.85714285714286,
+        "Total_Followers": 340143384
+      },
+      {
+        "Year": 2024,
+        "Artists": 9,
+        "Avg_Popularity": 81.33333333333333,
+        "Total_Followers": 389198263
+      },
+      {
+        "Year": 2025,
+        "Artists": 10,
+        "Avg_Popularity": 90.8,
+        "Total_Followers": 490520641
+      }
+    ],
+    "top_artists": [
+      {
+        "spotify_artist_name": "boygenius",
+        "spotify_genre": "Indie Rock",
+        "spotify_followers": 78227907,
+        "spotify_popularity": 92,
+        "spotify_danceability": 0.4404266631663576,
+        "spotify_energy": 0.6848272280307022
+      },
+      {
+        "spotify_artist_name": "Ed Sheeran",
+        "spotify_genre": "Pop",
+        "spotify_followers": 76653416,
+        "spotify_popularity": 93,
+        "spotify_danceability": 0.6019180855290205,
+        "spotify_energy": 0.5324461235544908
+      },
+      {
+        "spotify_artist_name": "Harry Styles",
+        "spotify_genre": "Pop/Rock",
+        "spotify_followers": 76401385,
+        "spotify_popularity": 75,
+        "spotify_danceability": 0.6838501639099958,
+        "spotify_energy": 0.5156566462277793
+      },
+      {
+        "spotify_artist_name": "The Weeknd",
+        "spotify_genre": "R&B/Pop",
+        "spotify_followers": 75682867,
+        "spotify_popularity": 76,
+        "spotify_danceability": 0.8753571532049581,
+        "spotify_energy": 0.8659969709057025
+      },
+      {
+        "spotify_artist_name": "Ariana Grande",
+        "spotify_genre": "Pop",
+        "spotify_followers": 75285250,
+        "spotify_popularity": 94,
+        "spotify_danceability": 0.8299702033681603,
+        "spotify_energy": 0.8401537692938899
+      },
+      {
+        "spotify_artist_name": "Morgan Wallen",
+        "spotify_genre": "Country",
+        "spotify_followers": 73020641,
+        "spotify_popularity": 89,
+        "spotify_danceability": 0.7167648553804473,
+        "spotify_energy": 0.7678873420373793
+      },
+      {
+        "spotify_artist_name": "Bad Bunny",
+        "spotify_genre": "Reggaeton/Latin",
+        "spotify_followers": 70221198,
+        "spotify_popularity": 97,
+        "spotify_danceability": 0.628034992108518,
+        "spotify_energy": 0.8925879806965068
+      },
+      {
+        "spotify_artist_name": "Coldplay",
+        "spotify_genre": "Rock",
+        "spotify_followers": 64474455,
+        "spotify_popularity": 99,
+        "spotify_danceability": 0.7329611783087484,
+        "spotify_energy": 0.7956488938538635
+      },
+      {
+        "spotify_artist_name": "Dua Lipa",
+        "spotify_genre": "Pop",
+        "spotify_followers": 61757120,
+        "spotify_popularity": 82,
+        "spotify_danceability": 0.407818203370597,
+        "spotify_energy": 0.7117007403531848
+      },
+      {
+        "spotify_artist_name": "Post Malone",
+        "spotify_genre": "Hip-Hop/Pop",
+        "spotify_followers": 58715250,
+        "spotify_popularity": 80,
+        "spotify_danceability": 0.7534286719238086,
+        "spotify_energy": 0.8645035840204937
+      },
+      {
+        "spotify_artist_name": "Eminem",
+        "spotify_genre": "Hip-Hop",
+        "spotify_followers": 54066131,
+        "spotify_popularity": 75,
+        "spotify_danceability": 0.8462794992449889,
+        "spotify_energy": 0.7696711209578253
+      },
+      {
+        "spotify_artist_name": "Joji",
+        "spotify_genre": "R&B/Pop",
+        "spotify_followers": 50163712,
+        "spotify_popularity": 70,
+        "spotify_danceability": 0.5197809453334863,
+        "spotify_energy": 0.5724474360456115
+      },
+      {
+        "spotify_artist_name": "Doja Cat",
+        "spotify_genre": "Hip-Hop/Pop",
+        "spotify_followers": 47407771,
+        "spotify_popularity": 95,
+        "spotify_danceability": 0.8315517129377967,
+        "spotify_energy": 0.811649063413779
+      },
+      {
+        "spotify_artist_name": "Travis Scott",
+        "spotify_genre": "Hip-Hop",
+        "spotify_followers": 46513466,
+        "spotify_popularity": 76,
+        "spotify_danceability": 0.7473924665198524,
+        "spotify_energy": 0.9402339195076288
+      },
+      {
+        "spotify_artist_name": "Lauv",
+        "spotify_genre": "Pop",
+        "spotify_followers": 46258670,
+        "spotify_popularity": 85,
+        "spotify_danceability": 0.8143687545759647,
+        "spotify_energy": 0.6783766633467947
+      },
+      {
+        "spotify_artist_name": "Arctic Monkeys",
+        "spotify_genre": "Indie Rock",
+        "spotify_followers": 45703247,
+        "spotify_popularity": 75,
+        "spotify_danceability": 0.420387570777382,
+        "spotify_energy": 0.795446471594121
+      },
+      {
+        "spotify_artist_name": "Taylor Swift",
+        "spotify_genre": "Pop",
+        "spotify_followers": 41632483,
+        "spotify_popularity": 90,
+        "spotify_danceability": 0.4714334089609704,
+        "spotify_energy": 0.8254442364744264
+      },
+      {
+        "spotify_artist_name": "Drake",
+        "spotify_genre": "Hip-Hop/Pop",
+        "spotify_followers": 40349564,
+        "spotify_popularity": 97,
+        "spotify_danceability": 0.615972509321058,
+        "spotify_energy": 0.645614570099021
+      },
+      {
+        "spotify_artist_name": "Lil Baby",
+        "spotify_genre": "Hip-Hop",
+        "spotify_followers": 31114003,
+        "spotify_popularity": 88,
+        "spotify_danceability": 0.7225863952047249,
+        "spotify_energy": 0.5871832145024958
+      },
+      {
+        "spotify_artist_name": "The 1975",
+        "spotify_genre": "Indie Rock",
+        "spotify_followers": 27824013,
+        "spotify_popularity": 99,
+        "spotify_danceability": 0.7636359979282105,
+        "spotify_energy": 0.6632703844029177
+      }
+    ]
+  },
+  "discogs": {
+    "stats": {
+      "total_artists": 15,
+      "avg_rating": 4.466666666666667,
+      "avg_rank": 21.066666666666666
+    },
+    "genres": [
+      {
+        "Genre": "Hip Hop",
+        "Artists": 4,
+        "Avg_Rating": 4.525,
+        "Avg_Rank": 15.5
+      },
+      {
+        "Genre": "Pop",
+        "Artists": 3,
+        "Avg_Rating": 4.466666666666667,
+        "Avg_Rank": 19.0
+      },
+      {
+        "Genre": "Alternative",
+        "Artists": 1,
+        "Avg_Rating": 4.5,
+        "Avg_Rank": 18.0
+      },
+      {
+        "Genre": "Alternative Rock",
+        "Artists": 1,
+        "Avg_Rating": 4.4,
+        "Avg_Rank": 32.0
+      },
+      {
+        "Genre": "Indie Rock",
+        "Artists": 1,
+        "Avg_Rating": 4.2,
+        "Avg_Rank": 30.0
+      },
+      {
+        "Genre": "Pop Rock",
+        "Artists": 1,
+        "Avg_Rating": 4.3,
+        "Avg_Rank": 22.0
+      },
+      {
+        "Genre": "R&B",
+        "Artists": 1,
+        "Avg_Rating": 4.3,
+        "Avg_Rank": 40.0
+      },
+      {
+        "Genre": "R&B/Soul",
+        "Artists": 1,
+        "Avg_Rating": 4.8,
+        "Avg_Rank": 5.0
+      },
+      {
+        "Genre": "Reggae",
+        "Artists": 1,
+        "Avg_Rating": 4.5,
+        "Avg_Rank": 15.0
+      },
+      {
+        "Genre": "Rock",
+        "Artists": 1,
+        "Avg_Rating": 4.5,
+        "Avg_Rank": 35.0
+      }
+    ],
+    "rating_distribution": {
+      "4.2": 2,
+      "4.3": 3,
+      "4.4": 2,
+      "4.5": 3,
+      "4.6": 2,
+      "4.7": 2,
+      "4.8": 1
+    },
+    "top_artists": [
+      {
+        "spotify_artist_name": "The Weeknd",
+        "discogs_genre": "R&B/Soul",
+        "discogs_rating": 4.8,
+        "discogs_rank": 5.0
+      },
+      {
+        "spotify_artist_name": "Taylor Swift",
+        "discogs_genre": "Pop",
+        "discogs_rating": 4.7,
+        "discogs_rank": 12.0
+      },
+      {
+        "spotify_artist_name": "Kendrick Lamar",
+        "discogs_genre": "Hip Hop",
+        "discogs_rating": 4.7,
+        "discogs_rank": 10.0
+      },
+      {
+        "spotify_artist_name": "Drake",
+        "discogs_genre": "Hip Hop",
+        "discogs_rating": 4.6,
+        "discogs_rank": 8.0
+      },
+      {
+        "spotify_artist_name": "Post Malone",
+        "discogs_genre": "Hip Hop",
+        "discogs_rating": 4.6,
+        "discogs_rank": 16.0
+      },
+      {
+        "spotify_artist_name": "Bad Bunny",
+        "discogs_genre": "Reggae",
+        "discogs_rating": 4.5,
+        "discogs_rank": 15.0
+      },
+      {
+        "spotify_artist_name": "Billie Eilish",
+        "discogs_genre": "Alternative",
+        "discogs_rating": 4.5,
+        "discogs_rank": 18.0
+      },
+      {
+        "spotify_artist_name": "Coldplay",
+        "discogs_genre": "Rock",
+        "discogs_rating": 4.5,
+        "discogs_rank": 35.0
+      },
+      {
+        "spotify_artist_name": "Ariana Grande",
+        "discogs_genre": "Pop",
+        "discogs_rating": 4.4,
+        "discogs_rank": 20.0
+      },
+      {
+        "spotify_artist_name": "Imagine Dragons",
+        "discogs_genre": "Alternative Rock",
+        "discogs_rating": 4.4,
+        "discogs_rank": 32.0
+      },
+      {
+        "spotify_artist_name": "Harry Styles",
+        "discogs_genre": "Pop Rock",
+        "discogs_rating": 4.3,
+        "discogs_rank": 22.0
+      },
+      {
+        "spotify_artist_name": "Dua Lipa",
+        "discogs_genre": "Pop",
+        "discogs_rating": 4.3,
+        "discogs_rank": 25.0
+      },
+      {
+        "spotify_artist_name": "SZA",
+        "discogs_genre": "R&B",
+        "discogs_rating": 4.3,
+        "discogs_rank": 40.0
+      },
+      {
+        "spotify_artist_name": "The 1975",
+        "discogs_genre": "Indie Rock",
+        "discogs_rating": 4.2,
+        "discogs_rank": 30.0
+      },
+      {
+        "spotify_artist_name": "Doja Cat",
+        "discogs_genre": "Hip Hop",
+        "discogs_rating": 4.2,
+        "discogs_rank": 28.0
+      }
+    ]
+  },
+  "musicbrainz": {
+    "stats": {
+      "total_artists": 14,
+      "avg_score": 0.9285714285714286
+    },
+    "top_tags": {
+      "pop": 7,
+      "hip hop": 5,
+      "rap": 4,
+      "rnb": 3,
+      "trap": 3,
+      "electronic": 2,
+      "dance-pop": 2,
+      "alternative": 2,
+      "r&b": 1,
+      "country": 1,
+      "folk": 1,
+      "reggaeton": 1,
+      "latin": 1,
+      "emo": 1,
+      "rock": 1
+    },
+    "countries": [
+      {
+        "Country": "US",
+        "Artists": 8,
+        "Avg_Score": 0.93625
+      },
+      {
+        "Country": "CA",
+        "Artists": 2,
+        "Avg_Score": 0.945
+      },
+      {
+        "Country": "UK",
+        "Artists": 2,
+        "Avg_Score": 0.9
+      },
+      {
+        "Country": "PR",
+        "Artists": 1,
+        "Avg_Score": 0.92
+      },
+      {
+        "Country": "XK",
+        "Artists": 1,
+        "Avg_Score": 0.9
+      }
+    ],
+    "top_artists": [
+      {
+        "spotify_artist_name": "Eminem",
+        "musicbrainz_tags": "hip hop, rap, eminem",
+        "musicbrainz_score": 0.98,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Taylor Swift",
+        "musicbrainz_tags": "pop, country, folk",
+        "musicbrainz_score": 0.97,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Kendrick Lamar",
+        "musicbrainz_tags": "hip hop, rap, conscious",
+        "musicbrainz_score": 0.96,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "The Weeknd",
+        "musicbrainz_tags": "r&b, pop, electronic",
+        "musicbrainz_score": 0.95,
+        "musicbrainz_country": "CA"
+      },
+      {
+        "spotify_artist_name": "Drake",
+        "musicbrainz_tags": "hip hop, rap, rnb",
+        "musicbrainz_score": 0.94,
+        "musicbrainz_country": "CA"
+      },
+      {
+        "spotify_artist_name": "Billie Eilish",
+        "musicbrainz_tags": "pop, alternative, emo",
+        "musicbrainz_score": 0.94,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Ariana Grande",
+        "musicbrainz_tags": "pop, rnb, dance-pop",
+        "musicbrainz_score": 0.93,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Bad Bunny",
+        "musicbrainz_tags": "reggaeton, latin, trap",
+        "musicbrainz_score": 0.92,
+        "musicbrainz_country": "PR"
+      },
+      {
+        "spotify_artist_name": "SZA",
+        "musicbrainz_tags": "rnb, soul, neo-soul",
+        "musicbrainz_score": 0.92,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Harry Styles",
+        "musicbrainz_tags": "pop, rock, solo",
+        "musicbrainz_score": 0.91,
+        "musicbrainz_country": "UK"
+      },
+      {
+        "spotify_artist_name": "Travis Scott",
+        "musicbrainz_tags": "hip hop, rap, trap",
+        "musicbrainz_score": 0.91,
+        "musicbrainz_country": "US"
+      },
+      {
+        "spotify_artist_name": "Dua Lipa",
+        "musicbrainz_tags": "pop, dance-pop, electronic",
+        "musicbrainz_score": 0.9,
+        "musicbrainz_country": "XK"
+      },
+      {
+        "spotify_artist_name": "The 1975",
+        "musicbrainz_tags": "indie rock, alternative",
+        "musicbrainz_score": 0.89,
+        "musicbrainz_country": "UK"
+      },
+      {
+        "spotify_artist_name": "Post Malone",
+        "musicbrainz_tags": "hip hop, pop, trap",
+        "musicbrainz_score": 0.88,
+        "musicbrainz_country": "US"
+      }
+    ]
+  }
+};
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return Math.round(num).toString();
+        }
+        
+        function renderDashboard() {
+            // ============ SPOTIFY ============
+            const spotify = dashboardData.spotify;
+            document.getElementById('spotify-artists').textContent = spotify.stats.total_artists;
+            document.getElementById('spotify-followers').textContent = (spotify.stats.total_followers / 1000000).toFixed(1);
+            document.getElementById('spotify-popularity').textContent = Math.round(spotify.stats.avg_popularity);
+            document.getElementById('spotify-danceability').textContent = Math.round(spotify.stats.avg_danceability * 100);
+            document.getElementById('spotify-energy').textContent = Math.round(spotify.stats.avg_energy * 100);
+            
+            // Spotify 流派圖表
+            const spotifyGenres = spotify.genres.slice(0, 10);
+            Plotly.newPlot('spotify-genres-chart', [{
+                x: spotifyGenres.map(g => g.Artists),
+                y: spotifyGenres.map(g => g.Genre),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#667eea' }
+            }], {
+                margin: { l: 150 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '藝術家數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // Spotify 年份趨勢
+            const yearlyData = spotify.yearly_trend;
+            Plotly.newPlot('spotify-yearly-chart', [
+                {
+                    x: yearlyData.map(y => y.Year),
+                    y: yearlyData.map(y => y.Avg_Popularity),
+                    name: '平均熱度',
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: { color: '#667eea', width: 3 },
+                    marker: { size: 10 }
+                }
+            ], {
+                xaxis: { title: '年份' },
+                yaxis: { title: '熱度' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                hovermode: 'x unified'
+            }, { responsive: true });
+            
+            // Spotify Top Artists
+            const topArtists = spotify.top_artists.slice(0, 20);
+            Plotly.newPlot('spotify-top-artists-chart', [{
+                x: topArtists.map(a => a.spotify_followers),
+                y: topArtists.map(a => a.spotify_artist_name),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: topArtists.map(a => a.spotify_popularity), colorscale: 'Viridis' }
+            }], {
+                margin: { l: 200 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '粉絲數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // Spotify 流派表格
+            const spotifyTableBody = document.getElementById('spotify-genres-table');
+            spotifyTableBody.innerHTML = spotify.genres.map(genre => `
+                <tr>
+                    <td><strong>${genre.Genre}</strong></td>
+                    <td><span class="metric-badge">${genre.Artists}</span></td>
+                    <td>${formatNumber(genre.Total_Followers)}</td>
+                    <td><span class="metric-badge high">${Math.round(genre.Avg_Popularity)}</span></td>
+                </tr>
+            `).join('');
+            
+            // ============ DISCOGS ============
+            const discogs = dashboardData.discogs;
+            document.getElementById('discogs-artists').textContent = discogs.stats.total_artists;
+            document.getElementById('discogs-rating').textContent = discogs.stats.avg_rating.toFixed(2);
+            document.getElementById('discogs-rank').textContent = Math.round(discogs.stats.avg_rank);
+            
+            // Discogs 流派圖表
+            const discogsGenres = discogs.genres.slice(0, 10);
+            Plotly.newPlot('discogs-genres-chart', [{
+                x: discogsGenres.map(g => g.Artists),
+                y: discogsGenres.map(g => g.Genre),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#764ba2' }
+            }], {
+                margin: { l: 150 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '藝術家數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // Discogs 評分分佈
+            const ratingDist = discogs.rating_distribution;
+            Plotly.newPlot('discogs-rating-chart', [{
+                x: Object.keys(ratingDist).map(k => parseFloat(k)),
+                y: Object.values(ratingDist),
+                type: 'bar',
+                marker: { color: '#764ba2' }
+            }], {
+                xaxis: { title: '評分' },
+                yaxis: { title: '藝術家數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // Discogs Top Artists
+            const discogsTopArtists = discogs.top_artists.slice(0, 20);
+            Plotly.newPlot('discogs-top-artists-chart', [{
+                x: discogsTopArtists.map(a => a.discogs_rating),
+                y: discogsTopArtists.map(a => a.spotify_artist_name),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: discogsTopArtists.map(a => a.discogs_rank), colorscale: 'Plasma' }
+            }], {
+                margin: { l: 200 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '評分' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // Discogs 流派表格
+            const discogsTableBody = document.getElementById('discogs-genres-table');
+            discogsTableBody.innerHTML = discogs.genres.map(genre => `
+                <tr>
+                    <td><strong>${genre.Genre}</strong></td>
+                    <td><span class="metric-badge">${genre.Artists}</span></td>
+                    <td><span class="metric-badge high">${genre.Avg_Rating.toFixed(2)}</span></td>
+                    <td>${Math.round(genre.Avg_Rank)}</td>
+                </tr>
+            `).join('');
+            
+            // ============ MUSICBRAINZ ============
+            const mb = dashboardData.musicbrainz;
+            document.getElementById('mb-artists').textContent = mb.stats.total_artists;
+            document.getElementById('mb-score').textContent = mb.stats.avg_score.toFixed(2);
+            
+            // MusicBrainz 標籤圖表
+            const topTags = Object.entries(mb.top_tags).slice(0, 15);
+            Plotly.newPlot('mb-tags-chart', [{
+                x: topTags.map(t => t[1]),
+                y: topTags.map(t => t[0]),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#FF6B9D' }
+            }], {
+                margin: { l: 120 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '出現次數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // MusicBrainz 國家分佈
+            const countries = mb.countries.slice(0, 10);
+            Plotly.newPlot('mb-countries-chart', [{
+                x: countries.map(c => c.Artists),
+                y: countries.map(c => c.Country),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#4ECDC4' }
+            }], {
+                margin: { l: 80 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '藝術家數' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // MusicBrainz Top Artists
+            const mbTopArtists = mb.top_artists.slice(0, 20);
+            Plotly.newPlot('mb-top-artists-chart', [{
+                x: mbTopArtists.map(a => a.musicbrainz_score),
+                y: mbTopArtists.map(a => a.spotify_artist_name),
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#4ECDC4' }
+            }], {
+                margin: { l: 200 },
+                yaxis: { autorange: 'reversed' },
+                xaxis: { title: '得分' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            }, { responsive: true });
+            
+            // MusicBrainz 國家表格
+            const mbTableBody = document.getElementById('mb-countries-table');
+            mbTableBody.innerHTML = mb.countries.map(country => `
+                <tr>
+                    <td><strong>${country.Country}</strong></td>
+                    <td><span class="metric-badge">${country.Artists}</span></td>
+                    <td><span class="metric-badge high">${country.Avg_Score.toFixed(2)}</span></td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('timestamp').textContent = new Date(dashboardData.timestamp).toLocaleString('zh-TW');
+        }
+        
+        // 頁面載入完成後立即渲染
+        window.addEventListener('load', renderDashboard);
+        renderDashboard();
+    </script>
+</body>
+</html>
